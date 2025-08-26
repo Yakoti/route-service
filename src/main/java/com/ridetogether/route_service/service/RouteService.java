@@ -1,10 +1,12 @@
 package com.ridetogether.route_service.service;
 
-import com.ridetogether.ridetogether.dto.RouteDto;
-import com.ridetogether.ridetogether.maps.GoogleMapsApiUrlGenerator;
-import com.ridetogether.ridetogether.maps.GoogleMapsWebUrlGenerator;
-import com.ridetogether.ridetogether.model.User;
-import com.ridetogether.ridetogether.repository.UserRepository;
+import com.ridetogether.route_service.dto.RouteDto;
+import com.ridetogether.route_service.maps.GoogleMapsApiUrlGenerator;
+import com.ridetogether.route_service.maps.GoogleMapsWebUrlGenerator;
+import com.ridetogether.route_service.dto.DriverDto;
+import com.ridetogether.route_service.dto.PassengerDto;
+import com.ridetogether.route_service.proxy.UserServiceProxy;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -17,44 +19,48 @@ import java.util.logging.Logger;
 
 @Service
 public class RouteService {
-    private final String apiKey;
-    private final UserRepository userRepository;
-    private final RestTemplate restTemplate;
-    public static final Logger logger = Logger.getLogger(RouteService.class.getName());
 
-    public RouteService(@Value("${google.api.key}") String apiKey,
-                        UserRepository userRepository,
-                        UserService userService,
-                        RestTemplate restTemplate) {
+    private String apiKey;
+    private UserServiceProxy proxy;
+    private RestTemplate restTemplate;
+    private static final Logger logger = Logger.getLogger(RouteService.class.getName());
+
+    @Value("${google.api.key}")
+    public void setApiKey(String apiKey) {
         this.apiKey = apiKey;
-        this.userRepository = userRepository;
+    }
+
+    @Autowired
+    public void setProxy(UserServiceProxy proxy) {
+        this.proxy = proxy;
+    }
+
+    @Autowired
+    public void setRestTemplate(RestTemplate restTemplate) {
         this.restTemplate = restTemplate;
     }
 
-    public RouteDto getRouteDtoForOneOrMorePassengers(Long driverId, List<Long> passengerIds){
-        logger.info("CALLED: RouteService.getRouteDtoForOneOrMorePassengers");
 
-        User driver = userRepository.findById(driverId).orElseThrow();
-        List<String> waypoints = passengerIds.stream()
-                .map(id -> userRepository.findById(id).orElseThrow().getHomeAddress())
+    public RouteDto buildRouteWithPassengers(DriverDto driver, List<PassengerDto> passengers) {
+        List<String> passengerWaypoints = passengers.stream()
+                .map(PassengerDto::homeAddress)
                 .toList();
 
-        String startAddress = driver.getHomeAddress();
-        String endAddress = driver.getOfficeAddress();
+        String startAddress = driver.homeAddress();
+        String officeAddress = driver.officeAddress();
 
-        GoogleMapsApiUrlGenerator apiUrl = new GoogleMapsApiUrlGenerator(startAddress, endAddress, waypoints, apiKey);
-        GoogleMapsWebUrlGenerator webUrl = new GoogleMapsWebUrlGenerator(startAddress, endAddress, waypoints);
+        GoogleMapsApiUrlGenerator apiUrlWithPassengers = new GoogleMapsApiUrlGenerator(startAddress, officeAddress, passengerWaypoints, apiKey);
+        GoogleMapsApiUrlGenerator apiUrlWithoutPassengers = new GoogleMapsApiUrlGenerator(startAddress, officeAddress, apiKey);
+        GoogleMapsWebUrlGenerator webUrl = new GoogleMapsWebUrlGenerator(startAddress, officeAddress, passengerWaypoints);
 
-        String jsonWithWaypoints = restTemplate.getForObject(apiUrl.build(), String.class);
+        String googleJsonWithWaypoints = restTemplate.getForObject(apiUrlWithPassengers.build(), String.class);
+        String googleJsonDirectRoute = restTemplate.getForObject(apiUrlWithoutPassengers.build(), String.class);
 
-        int metersWithWaypoints = RouteDataJsonExtractor.extractDistanceInMeters(jsonWithWaypoints);
-        Duration durationWithWaypoints = RouteDataJsonExtractor.extractDuration(jsonWithWaypoints);
+        int metersWithWaypoints = RouteDataJsonExtractor.extractDistanceInMeters(googleJsonWithWaypoints);
+        int metersDirectRoute = RouteDataJsonExtractor.extractDistanceInMeters(googleJsonDirectRoute);
 
-        GoogleMapsApiUrlGenerator directApiUrl = new GoogleMapsApiUrlGenerator(startAddress, endAddress, apiKey);
-        String jsonDirectRoute = restTemplate.getForObject(directApiUrl.build(), String.class);
-
-        int metersDirectRoute = RouteDataJsonExtractor.extractDistanceInMeters(jsonDirectRoute);
-        Duration durationDirectRoute = RouteDataJsonExtractor.extractDuration(jsonDirectRoute);
+        Duration durationWithWaypoints = RouteDataJsonExtractor.extractDuration(googleJsonWithWaypoints);
+        Duration durationDirectRoute = RouteDataJsonExtractor.extractDuration(googleJsonDirectRoute);
 
         return new RouteDto(
                 webUrl.build(),
