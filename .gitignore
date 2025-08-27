@@ -31,3 +31,8 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Svetoslav ###
+# Ignore the specific folder
+src/main/java/com/ridetogether/route_service/IgnoredFolder/
+

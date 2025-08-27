@@ -9,8 +9,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class RouteDto {
     String mapsUrl;
-    double totalDistanceInMeters;
-    double totalTimeInSeconds;
-    double addedTimeInSeconds;
-    double addedDistanceInMeters;
+    int totalDistanceInMeters;
+    long totalTimeInSeconds;
+    long addedTimeInSeconds;
+    int addedDistanceInMeters;
 }
