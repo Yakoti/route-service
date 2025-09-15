@@ -55,12 +55,3 @@ public abstract class GoogleMapsUrlGenerator {
 
     public abstract String build();
 }
-
-//old encode
-//    protected String encode(String value) {
-//        try {
-//            return URLEncoder.encode(value, "UTF-8");
-//        } catch (UnsupportedEncodingException e) {
-//            throw new RuntimeException(e);
-//        }
-//    }
