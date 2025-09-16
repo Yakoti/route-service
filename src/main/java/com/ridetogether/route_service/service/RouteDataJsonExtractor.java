@@ -12,28 +12,64 @@ public class RouteDataJsonExtractor {
     private static final ObjectMapper mapper = new ObjectMapper();
 
     public static int extractDistanceInMeters(String json) {
-        logger.info("CALLED JsonExtractor.fetchDistanceInMeters");
+        logger.info("CALLED JsonExtractor.extractDistanceInMeters");
         try {
-            JsonNode node = mapper.readTree(json);
-            return node.get("routes").get(0).get("legs").get(0).get("distance").get("value").asInt();
+            JsonNode legs = mapper.readTree(json)
+                    .get("routes").get(0)
+                    .get("legs");
+            int totalDistance = 0;
+            for (JsonNode leg : legs) {
+                totalDistance += leg.get("distance").get("value").asInt();
+            }
+            return totalDistance;
         } catch (Exception e) {
-            logger.error("ERROR extracting distance in JsonExtractor.fetchDistanceInMeters", e);
+            logger.error("ERROR extracting distance in JsonExtractor.extractDistanceInMeters", e);
             return -1;
         }
     }
 
     public static Duration extractDuration(String json) {
-        logger.info("CALLED JsonExtractor.fetchDuration");
+        logger.info("CALLED JsonExtractor.extractDuration");
         try {
-            JsonNode node = mapper.readTree(json);
-            int seconds = node.get("routes").get(0).get("legs").get(0).get("duration").get("value").asInt();
-            return Duration.ofSeconds(seconds);
+            JsonNode legs = mapper.readTree(json)
+                    .get("routes").get(0)
+                    .get("legs");
+            int totalSeconds = 0;
+            for (JsonNode leg : legs) {
+                totalSeconds += leg.get("duration").get("value").asInt();
+            }
+            return Duration.ofSeconds(totalSeconds);
         } catch (Exception e) {
-            logger.error("ERROR extracting duration in JsonExtractor.fetchDuration", e);
+            logger.error("ERROR extracting duration in JsonExtractor.extractDuration", e);
             return Duration.ZERO;
         }
     }
 
+    //version that fetches only the first two points time and meters
+//    public static int extractDistanceInMeters(String json) {
+//        logger.info("CALLED JsonExtractor.fetchDistanceInMeters");
+//        try {
+//            JsonNode node = mapper.readTree(json);
+//            return node.get("routes").get(0).get("legs").get(0).get("distance").get("value").asInt();
+//        } catch (Exception e) {
+//            logger.error("ERROR extracting distance in JsonExtractor.fetchDistanceInMeters", e);
+//            return -1;
+//        }
+//    }
+//
+//    public static Duration extractDuration(String json) {
+//        logger.info("CALLED JsonExtractor.fetchDuration");
+//        try {
+//            JsonNode node = mapper.readTree(json);
+//            int seconds = node.get("routes").get(0).get("legs").get(0).get("duration").get("value").asInt();
+//            return Duration.ofSeconds(seconds);
+//        } catch (Exception e) {
+//            logger.error("ERROR extracting duration in JsonExtractor.fetchDuration", e);
+//            return Duration.ZERO;
+//        }
+//    }
+
+    //debug version
 //    public static int DEBUGfetchDistanceInMetersDEBUG(String json) {
 //        logger.info("CALLED JsonExtractor.DEBUGfetchDistanceInMeters");
 //

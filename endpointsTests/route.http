@@ -1,13 +1,11 @@
 ### Get matching passengers for a driver
-GET http://localhost:8080/routes/drivers/2/matchingPassengers
+GET http://localhost:8083/routes/drivers/11/matchingPassengers
 Accept: application/json
-
 
 ### Get matching drivers for a passenger
-GET http://localhost:8080/routes/passengers/1/matchingDrivers
+GET http://localhost:8083/routes/passengers/9/matchingDrivers
 Accept: application/json
 
-
-### Build route with passengers
-GET http://localhost:8080/routes/drivers/9/withPassengers?passengersIds=1,2,3
+### Get route with passengers (driver with IDs 1,2,3,4,5)
+GET http://localhost:8083/routes/drivers/11/withPassengers?passengersIds=1&passengersIds=2&passengersIds=3&passengersIds=4&passengersIds=5
 Accept: application/json
